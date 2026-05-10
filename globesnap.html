@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobeSnap – Product Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0a0a0f;
+    --paper: #f2efe8;
+    --gold: #c8a84b;
+    --amber: #e8760a;
+    --sky: #2a6496;
+    --ice: #d6eaf5;
+    --red: #c0392b;
+    --green: #1a7a4a;
+    --muted: #8a8278;
+    --card-bg: #faf7f0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.6;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-left {
+    padding: 60px 56px 60px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-right {
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 9vw, 130px);
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    margin-bottom: 28px;
+  }
+
+  .hero h1 span.globe-letter {
+    color: var(--amber);
+    display: inline-block;
+    animation: tilt 4s ease-in-out infinite;
+  }
+
+  @keyframes tilt {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+  }
+
+  .hero-tagline {
+    font-size: 17px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ink);
+    max-width: 380px;
+    line-height: 1.55;
+    border-left: 3px solid var(--amber);
+    padding-left: 18px;
+    margin-bottom: 40px;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    color: var(--amber);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* GLOBE CANVAS */
+  .globe-wrap {
+    position: relative;
+    width: 420px;
+    height: 420px;
+  }
+
+  canvas#globe {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .globe-ring {
+    position: absolute;
+    inset: -24px;
+    border: 1px dashed rgba(200,168,75,0.3);
+    border-radius: 50%;
+    animation: spin-ring 30s linear infinite;
+  }
+
+  .globe-ring-2 {
+    position: absolute;
+    inset: -48px;
+    border: 1px solid rgba(200,168,75,0.12);
+    border-radius: 50%;
+    animation: spin-ring 50s linear infinite reverse;
+  }
+
+  @keyframes spin-ring {
+    to { transform: rotate(360deg); }
+  }
+
+  .globe-label {
+    position: absolute;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .globe-label.top { top: -60px; left: 50%; transform: translateX(-50%); }
+  .globe-label.bottom { bottom: -60px; left: 50%; transform: translateX(-50%); }
+
+  /* ── NAV STRIP ── */
+  .nav {
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    padding: 0 64px;
+    height: 52px;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav-links {
+    display: flex;
+    list-style: none;
+    gap: 0;
+    margin-left: auto;
+  }
+
+  .nav-links a {
+    display: block;
+    padding: 0 18px;
+    height: 52px;
+    line-height: 52px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .nav-links a:hover { color: var(--gold); }
+  .nav-links li:first-child a { border-left: 1px solid rgba(255,255,255,0.06); }
+
+  .nav-brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+  }
+
+  .nav-brand span { color: var(--amber); }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 96px 64px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 60px;
+  }
+
+  .section-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: rgba(0,0,0,0.07);
+    line-height: 1;
+    user-select: none;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  /* ── CORE LOOP ── */
+  .loop-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 16px;
+  }
+
+  .loop-step {
+    flex-shrink: 0;
+    background: var(--card-bg);
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 28px 24px;
+    width: 160px;
+    text-align: center;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+
+  .loop-step:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+    z-index: 2;
+  }
+
+  .loop-step .step-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .loop-step .step-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .loop-step .step-desc {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .loop-arrow {
+    flex-shrink: 0;
+    width: 40px;
+    text-align: center;
+    color: var(--amber);
+    font-size: 18px;
+  }
+
+  .loop-step.highlight { background: var(--ink); color: var(--paper); }
+  .loop-step.highlight .step-name { color: var(--gold); }
+  .loop-step.highlight .step-desc { color: var(--ice); }
+
+  /* ── SCREENS ── */
+  .screens-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .screen-card {
+    background: var(--ink);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .screen-phone {
+    background: #111;
+    border-radius: 28px;
+    margin: 24px auto;
+    width: 180px;
+    height: 360px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #2a2a2a;
+    box-shadow: 0 0 0 6px #0f0f0f, 0 24px 60px rgba(0,0,0,0.6);
+  }
+
+  .phone-notch {
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 8px;
+    background: #000;
+    border-radius: 4px;
+    z-index: 10;
+  }
+
+  /* Globe screen */
+  .screen-globe-bg {
+    width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 40% 40%, #1a3a5c, #0a0e1a);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .globe-2d {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -48%);
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #2a7a9c, #0d4a7a 60%, #061428);
+    box-shadow: 0 0 40px rgba(42,122,156,0.4), inset -10px -10px 30px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+
+  .globe-2d::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cellipse cx='90' cy='85' rx='28' ry='20' fill='%232d7a3a' opacity='0.7'/%3E%3Cellipse cx='130' cy='95' rx='20' ry='26' fill='%232d7a3a' opacity='0.6'/%3E%3Cellipse cx='60' cy='120' rx='14' ry='10' fill='%232d7a3a' opacity='0.5'/%3E%3Cellipse cx='115' cy='130' rx='18' ry='12' fill='%232d7a3a' opacity='0.5'/%3E%3C/svg%3E") center/cover;
+  }
+
+  .globe-pin {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1.5px solid var(--paper);
+  }
+
+  .pin-red { background: #e74c3c; }
+  .pin-amber { background: var(--amber); }
+  .pin-green { background: var(--green); }
+
+  .pin-pulse {
+    animation: pulse-pin 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-pin {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.6); opacity: 0.6; }
+  }
+
+  .globe-hud {
+    position: absolute;
+    bottom: 16px;
+    left: 0; right: 0;
+    padding: 0 12px;
+  }
+
+  .hud-bar {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hud-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+  .hud-text { font-size: 8px; color: rgba(255,255,255,0.7); font-family: 'DM Sans', sans-serif; }
+
+  /* Story card screen */
+  .screen-card-bg {
+    width: 100%; height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .story-bg-img {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #2c3e50, #3498db 60%, #1a252f);
+  }
+
+  .story-bg-img::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.85));
+  }
+
+  .story-flag-row {
+    position: absolute;
+    top: 20px; left: 14px; right: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .flag-emoji { font-size: 14px; }
+  .country-name { font-size: 9px; color: rgba(255,255,255,0.8); font-family: 'Space Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; }
+  .ts { font-size: 8px; color: rgba(255,255,255,0.45); margin-left: auto; }
+
+  .story-summary {
+    position: absolute;
+    bottom: 56px;
+    left: 14px; right: 14px;
+  }
+
+  .summary-text {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+
+  .story-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .act-btn {
+    flex: 1;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(4px);
+    border-radius: 4px;
+    padding: 5px 2px;
+    text-align: center;
+    font-size: 7px;
+    color: rgba(255,255,255,0.8);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  /* Profile screen */
+  .screen-profile-bg {
+    width: 100%; height: 100%;
+    background: var(--paper);
+    position: relative;
+  }
+
+  .profile-header-bar {
+    background: var(--ink);
+    padding: 28px 14px 16px;
+    text-align: center;
+  }
+
+  .avatar-ring {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--amber), var(--gold));
+    margin: 0 auto 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .profile-name { font-size: 9px; color: var(--paper); font-family: 'Space Mono', monospace; letter-spacing: 0.1em; }
+  .streak-row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px; }
+  .streak-fire { font-size: 12px; }
+  .streak-num { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--amber); line-height: 1; }
+  .streak-lbl { font-size: 7px; color: var(--muted); }
+
+  .badges-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px; }
+  .badge-item {
+    background: var(--card-bg);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 4px;
+    padding: 8px;
+    text-align: center;
+  }
+  .badge-icon { font-size: 16px; display: block; }
+  .badge-name { font-size: 7px; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: 2px; display: block; }
+
+  .screen-label {
+    background: rgba(200,168,75,0.15);
+    padding: 12px 24px;
+    text-align: center;
+  }
+
+  .screen-label-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* ── AI ENGINE ── */
+  .ai-pipeline {
+    background: var(--ink);
+    padding: 56px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ai-pipeline::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--amber) 20%, var(--amber) 80%, transparent);
+    opacity: 0.3;
+  }
+
+  .pipeline-step {
+    padding: 32px 20px;
+    text-align: center;
+    position: relative;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .pipeline-step:last-child { border-right: none; }
+
+  .pipeline-icon {
+    font-size: 28px;
+    margin-bottom: 16px;
+    display: block;
+    position: relative;
+    z-index: 2;
+  }
+
+  .pipeline-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .pipeline-detail {
+    font-size: 11px;
+    color: rgba(242,239,232,0.5);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  .pipeline-metric {
+    margin-top: 12px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--amber);
+  }
+
+  /* ── TECH STACK ── */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+  }
+
+  .stack-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 28px 24px;
+    transition: background 0.2s;
+  }
+
+  .stack-card:hover { background: var(--ink); color: var(--paper); }
+  .stack-card:hover .stack-category { color: var(--gold); }
+  .stack-card:hover .stack-items li { color: rgba(242,239,232,0.7); }
+  .stack-card:hover .stack-items li::before { color: var(--amber); }
+
+  .stack-category {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .stack-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+  }
+
+  .stack-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stack-items li {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-weight: 300;
+  }
+
+  .stack-items li::before {
+    content: '→';
+    color: var(--amber);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  /* ── MONETIZATION ── */
+  .mono-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .mono-card {
+    border: 1px solid rgba(0,0,0,0.12);
+    padding: 40px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mono-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+  }
+
+  .mono-card.free::before { background: var(--muted); }
+  .mono-card.premium::before { background: var(--amber); }
+  .mono-card.b2b::before { background: var(--sky); }
+
+  .mono-tier {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .mono-price {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+
+  .mono-price sup { font-size: 24px; vertical-align: top; margin-top: 10px; display: inline-block; }
+  .mono-price span { font-size: 18px; color: var(--muted); }
+
+  .mono-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mono-features li {
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 300;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .mono-features li .tick { color: var(--green); flex-shrink: 0; font-weight: 500; }
+  .mono-features li .cross { color: var(--muted); flex-shrink: 0; }
+
+  .mono-card.premium {
+    background: var(--ink);
+    transform: translateY(-8px);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  }
+
+  .mono-card.premium .mono-price { color: var(--paper); }
+  .mono-card.premium .mono-tier { color: var(--gold); }
+  .mono-card.premium .mono-features li { color: rgba(242,239,232,0.8); }
+
+  /* ── ROADMAP ── */
+  .roadmap-track {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    position: relative;
+  }
+
+  .roadmap-track::before {
+    content: '';
+    position: absolute;
+    top: 28px; left: 14%;
+    width: 72%;
+    height: 2px;
+    background: linear-gradient(to right, var(--amber), var(--gold));
+  }
+
+  .roadmap-item {
+    padding: 0 16px;
+    position: relative;
+  }
+
+  .roadmap-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: 3px solid var(--paper);
+    box-shadow: 0 0 0 2px var(--amber);
+    margin: 21px auto 24px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .roadmap-q {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--amber);
+    line-height: 1;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .roadmap-desc {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink);
+    text-align: center;
+    line-height: 1.55;
+  }
+
+  .roadmap-icon {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  /* ── KPI ── */
+  .kpi-strip {
+    background: var(--ink);
+    padding: 56px 64px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+
+  .kpi-item {
+    padding: 0 32px;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    text-align: center;
+  }
+
+  .kpi-item:last-child { border-right: none; }
+
+  .kpi-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 60px;
+    color: var(--gold);
+    line-height: 1;
+    display: block;
+  }
+
+  .kpi-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(242,239,232,0.4);
+    margin-top: 6px;
+  }
+
+  /* ── PITCH ── */
+  .pitch-section {
+    background: var(--amber);
+    padding: 120px 64px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pitch-section::before {
+    content: '"';
+    position: absolute;
+    top: -40px; left: 40px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 300px;
+    color: rgba(0,0,0,0.06);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .pitch-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 4vw, 54px);
+    line-height: 1.15;
+    color: var(--ink);
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ── PRIVACY ── */
+  .privacy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .privacy-item {
+    display: flex;
+    gap: 20px;
+    padding: 28px;
+    background: var(--card-bg);
+    border: 1px solid rgba(0,0,0,0.07);
+  }
+
+  .privacy-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .privacy-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .privacy-desc {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink);
+    padding: 40px 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .footer-brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--paper);
+    letter-spacing: 0.08em;
+  }
+
+  .footer-brand span { color: var(--amber); }
+
+  .footer-note {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── ANIMATIONS ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { display: none; }
+    section { padding: 60px 24px; }
+    .screens-grid, .stack-grid, .mono-grid, .roadmap-track { grid-template-columns: 1fr; }
+    .ai-pipeline { grid-template-columns: 1fr 1fr; }
+    .kpi-strip { grid-template-columns: 1fr 1fr; }
+    .nav { padding: 0 24px; }
+    .kpi-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 20px 0; }
+    .roadmap-track::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">Globe<span>Snap</span></div>
+  <ul class="nav-links">
+    <li><a href="#loop">Loop</a></li>
+    <li><a href="#screens">Screens</a></li>
+    <li><a href="#ai">AI</a></li>
+    <li><a href="#stack">Stack</a></li>
+    <li><a href="#mono">Monetize</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-left">
+    <p class="label">Product Blueprint · 2025</p>
+    <h1><span class="globe-letter">G</span>LOBE<br>SNAP</h1>
+    <p class="hero-tagline">A TikTok-for-world-news: open the app, tap any country on the spinning 3-D globe, swipe through today's stories, each boiled down to 2 AI-sharp lines in under 2 seconds.</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">15K</span>
+        <span class="stat-label">RSS Sources</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">40</span>
+        <span class="stat-label">Languages</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">1.8s</span>
+        <span class="stat-label">Crawl→Card</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">200+</span>
+        <span class="stat-label">Edge Nodes</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="globe-wrap">
+      <div class="globe-ring"></div>
+      <div class="globe-ring-2"></div>
+      <canvas id="globe" width="420" height="420"></canvas>
+      <p class="globe-label top">LIVE · 15,000 FEEDS</p>
+      <p class="globe-label bottom">200+ EDGE NODES</p>
+    </div>
+  </div>
+</div>
+
+<!-- CORE LOOP -->
+<section id="loop">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2 class="section-title">Core Loop</h2>
+  </div>
+  <div class="loop-track">
+    <div class="loop-step">
+      <span class="step-icon">🚀</span>
+      <p class="step-name">Launch</p>
+      <p class="step-desc">App opens to live spinning globe</p>
+    </div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-step highlight">
+      <span class="step-icon">🌍</span>
+      <p class="step-name">Spin Globe</p>
+      <p class="step-desc">3-D interactive with day/night shading</p>
+    </div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-step">
+      <span class="step-icon">📍</span>
+      <p class="step-name">Tap Country</p>
+      <p class="step-desc">Or "Near Me" for local news</p>
+    </div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-step highlight">
+      <span class="step-icon">🃏</span>
+      <p class="step-name">Swipe Cards</p>
+      <p class="step-desc">2-line AI summaries, hero image bg</p>
+    </div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-step">
+      <span class="step-icon">📖</span>
+      <p class="step-name">Deep Dive</p>
+      <p class="step-desc">Long-press: full article or 30s audio</p>
+    </div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-step">
+      <span class="step-icon">✅</span>
+      <p class="step-name">Verify</p>
+      <p class="step-desc">Tap source logo to check origin</p>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENS -->
+<section id="screens" style="background: #f7f4ec;">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2 class="section-title">Key Screens</h2>
+  </div>
+  <div class="screens-grid">
+
+    <!-- Globe View -->
+    <div class="screen-card fade-in">
+      <div style="padding: 24px 24px 0; background: var(--ink);">
+        <div class="screen-phone">
+          <div class="phone-notch"></div>
+          <div class="screen-globe-bg">
+            <div class="globe-2d">
+              <div class="globe-pin pin-red pin-pulse" style="top:38%;left:48%;"></div>
+              <div class="globe-pin pin-amber" style="top:28%;left:65%;"></div>
+              <div class="globe-pin pin-green" style="top:55%;left:30%;"></div>
+              <div class="globe-pin pin-red" style="top:45%;left:72%;"></div>
+            </div>
+            <div style="position:absolute;top:16px;left:14px;right:14px;display:flex;justify-content:space-between;">
+              <span style="font-size:7px;color:rgba(255,255,255,0.4);font-family:'Space Mono',monospace;letter-spacing:0.12em;">LIVE</span>
+              <span style="font-size:7px;color:rgba(255,255,255,0.4);font-family:'Space Mono',monospace;">127 STORIES</span>
+            </div>
+            <div class="globe-hud">
+              <div class="hud-bar">
+                <div class="hud-dot"></div>
+                <span class="hud-text">🔥 Gaza · Ukraine · Taiwan +12</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">
+        <p class="screen-label-text">Globe View</p>
+      </div>
+      <div style="padding: 20px 24px 28px; background: var(--ink);">
+        <p style="font-size:12px;color:rgba(242,239,232,0.5);font-weight:300;line-height:1.6;">Pins show story count. Hotter color = more breaking. Double-tap to auto-rotate; pinch to zoom. Day/night shading live.</p>
+      </div>
+    </div>
+
+    <!-- Story Card -->
+    <div class="screen-card fade-in" style="transition-delay:0.15s;">
+      <div style="padding: 24px 24px 0; background: var(--ink);">
+        <div class="screen-phone">
+          <div class="phone-notch"></div>
+          <div class="screen-card-bg">
+            <div class="story-bg-img"></div>
+            <div class="story-flag-row">
+              <span class="flag-emoji">🇺🇦</span>
+              <span class="country-name">Ukraine</span>
+              <span class="ts">2m ago</span>
+            </div>
+            <div class="story-summary">
+              <p class="summary-text">Kyiv reports drone strike on Zaporizhzhia grid; power restored to 60% within the hour as repair crews mobilize.</p>
+              <div class="story-actions">
+                <div class="act-btn">Full Story</div>
+                <div class="act-btn">▶ 30s</div>
+                <div class="act-btn">Share</div>
+                <div class="act-btn">Save</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">
+        <p class="screen-label-text">Story Card</p>
+      </div>
+      <div style="padding: 20px 24px 28px; background: var(--ink);">
+        <p style="font-size:12px;color:rgba(242,239,232,0.5);font-weight:300;line-height:1.6;">Flag + country + timestamp. Bold 2-line AI summary. Auto hero image (blurred if graphic). Full / Listen / Share / Save.</p>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="screen-card fade-in" style="transition-delay:0.3s;">
+      <div style="padding: 24px 24px 0; background: var(--ink);">
+        <div class="screen-phone">
+          <div class="phone-notch"></div>
+          <div class="screen-profile-bg">
+            <div class="profile-header-bar">
+              <div class="avatar-ring">🌍</div>
+              <p class="profile-name">WORLD_READER</p>
+              <div class="streak-row">
+                <span class="streak-fire">🔥</span>
+                <span class="streak-num">42</span>
+                <span class="streak-lbl" style="color:rgba(242,239,232,0.5);font-size:7px;font-family:'Space Mono',monospace;margin-left:4px;">DAY STREAK</span>
+              </div>
+            </div>
+            <div class="badges-grid">
+              <div class="badge-item">
+                <span class="badge-icon">🌍</span>
+                <span class="badge-name">50 COUNTRIES</span>
+              </div>
+              <div class="badge-item">
+                <span class="badge-icon">⚡</span>
+                <span class="badge-name">SPEED READER</span>
+              </div>
+              <div class="badge-item">
+                <span class="badge-icon">🗺️</span>
+                <span class="badge-name">GLOBETROTTER</span>
+              </div>
+              <div class="badge-item">
+                <span class="badge-icon">📡</span>
+                <span class="badge-name">EARLY ACCESS</span>
+              </div>
+            </div>
+            <div style="padding: 8px 10px 0;">
+              <div style="background: var(--ink); border-radius: 4px; padding: 8px 10px; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:8px;color:var(--gold);font-family:'Space Mono',monospace;letter-spacing:0.1em;">OFFLINE PACKS</span>
+                <span style="font-size:9px;color:rgba(242,239,232,0.5);">3 regions</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">
+        <p class="screen-label-text">Profile</p>
+      </div>
+      <div style="padding: 20px 24px 28px; background: var(--ink);">
+        <p style="font-size:12px;color:rgba(242,239,232,0.5);font-weight:300;line-height:1.6;">Reading streaks, unlock badges, "Passport" share cards. Offline packs. Favorites tray via swipe-up.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- AI ENGINE -->
+<section id="ai" style="padding: 0; background: var(--ink);">
+  <div style="padding: 72px 64px 40px;">
+    <div class="section-header" style="margin-bottom: 0;">
+      <span class="section-num" style="color: rgba(255,255,255,0.07);">04</span>
+      <h2 class="section-title" style="color: var(--paper);">AI Engine</h2>
+    </div>
+  </div>
+  <div class="ai-pipeline">
+    <div class="pipeline-step">
+      <span class="pipeline-icon">📡</span>
+      <p class="pipeline-name">Ingest</p>
+      <p class="pipeline-detail">15k RSS feeds + Twitter Lists + broadcast transcripts</p>
+      <p class="pipeline-metric">15K</p>
+    </div>
+    <div class="pipeline-step">
+      <span class="pipeline-icon">🧠</span>
+      <p class="pipeline-name">Rank</p>
+      <p class="pipeline-detail">Real-time BERT classifier → country, topic, credibility score</p>
+      <p class="pipeline-metric">BERT</p>
+    </div>
+    <div class="pipeline-step">
+      <span class="pipeline-icon">✍️</span>
+      <p class="pipeline-name">Summarize</p>
+      <p class="pipeline-detail">Fine-tuned T5-small → 2 sentences, ≤ 40 words</p>
+      <p class="pipeline-metric">≤40W</p>
+    </div>
+    <div class="pipeline-step">
+      <span class="pipeline-icon">🔍</span>
+      <p class="pipeline-name">Fact-check</p>
+      <p class="pipeline-detail">Cross-source corroboration; flagged if &lt; 2 independent reports</p>
+      <p class="pipeline-metric">2× SRC</p>
+    </div>
+    <div class="pipeline-step">
+      <span class="pipeline-icon">🌐</span>
+      <p class="pipeline-name">Deliver</p>
+      <p class="pipeline-detail">40 languages, edge cached 200+ nodes, original toggle</p>
+      <p class="pipeline-metric">1.8s</p>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="stack">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Tech Stack</h2>
+  </div>
+  <div class="stack-grid fade-in">
+    <div class="stack-card">
+      <p class="stack-category">Mobile</p>
+      <p class="stack-name">Flutter</p>
+      <ul class="stack-items">
+        <li>iOS + Android</li>
+        <li>Unity plug-in for 3-D globe</li>
+        <li>60 fps globe rendering</li>
+      </ul>
+    </div>
+    <div class="stack-card">
+      <p class="stack-category">Backend</p>
+      <p class="stack-name">GCP</p>
+      <ul class="stack-items">
+        <li>Python micro-services</li>
+        <li>Cloud Run (serverless)</li>
+        <li>Firestore · BigQuery</li>
+      </ul>
+    </div>
+    <div class="stack-card">
+      <p class="stack-category">Cache & CDN</p>
+      <p class="stack-name">Cloudflare</p>
+      <ul class="stack-items">
+        <li>Workers at 200+ edge nodes</li>
+        <li>Images CDN for hero photos</li>
+        <li>Redis cache layer</li>
+      </ul>
+    </div>
+    <div class="stack-card">
+      <p class="stack-category">Data</p>
+      <p class="stack-name">BigQuery</p>
+      <ul class="stack-items">
+        <li>Analytics & trend tracking</li>
+        <li>Firestore for user prefs</li>
+        <li>24h anon history TTL</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-item">
+    <span class="kpi-num">10K</span>
+    <p class="kpi-label">Day-30 installs target</p>
+  </div>
+  <div class="kpi-item">
+    <span class="kpi-num">5</span>
+    <p class="kpi-label">Countries / day / user</p>
+  </div>
+  <div class="kpi-item">
+    <span class="kpi-num">35%</span>
+    <p class="kpi-label">Swipe-to-full read rate</p>
+  </div>
+  <div class="kpi-item">
+    <span class="kpi-num">500</span>
+    <p class="kpi-label">Beta journalists & influencers</p>
+  </div>
+</div>
+
+<!-- PRIVACY -->
+<section id="privacy">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2 class="section-title">Data & Privacy</h2>
+  </div>
+  <div class="privacy-grid fade-in">
+    <div class="privacy-item">
+      <span class="privacy-icon">🔓</span>
+      <div>
+        <p class="privacy-title">No Account Required</p>
+        <p class="privacy-desc">Read the world without signing up. Zero friction onboarding—open the app, globe spins, start swiping.</p>
+      </div>
+    </div>
+    <div class="privacy-item">
+      <span class="privacy-icon">⏱️</span>
+      <div>
+        <p class="privacy-title">24-Hour History</p>
+        <p class="privacy-desc">Anonymous reading history stored for 24 hours only. No profile built, no behavioral targeting.</p>
+      </div>
+    </div>
+    <div class="privacy-item">
+      <span class="privacy-icon">🧹</span>
+      <div>
+        <p class="privacy-title">GDPR "Forget Me"</p>
+        <p class="privacy-desc">One tap wipes device data and edge cache across all 200+ nodes simultaneously. Compliant by design.</p>
+      </div>
+    </div>
+    <div class="privacy-item">
+      <span class="privacy-icon">🔗</span>
+      <div>
+        <p class="privacy-title">Source Transparency</p>
+        <p class="privacy-desc">Every card shows the original URL and outlet ownership. No hidden aggregation. One tap to verify.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MONETIZATION -->
+<section id="mono" style="background: #f7f4ec;">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2 class="section-title">Monetization</h2>
+  </div>
+  <div class="mono-grid">
+    <div class="mono-card free fade-in">
+      <p class="mono-tier">Free Tier</p>
+      <p class="mono-price"><sup>$</sup>0</p>
+      <ul class="mono-features">
+        <li><span class="tick">✓</span> 50 swipes per day</li>
+        <li><span class="tick">✓</span> All countries & topics</li>
+        <li><span class="tick">✓</span> 1 native ad per 20 swipes</li>
+        <li><span class="cross">–</span> Offline packs</li>
+        <li><span class="cross">–</span> Unlimited reading</li>
+        <li><span class="cross">–</span> Audio summaries</li>
+      </ul>
+    </div>
+    <div class="mono-card premium fade-in" style="transition-delay:0.15s;">
+      <p class="mono-tier">Premium</p>
+      <p class="mono-price"><sup>$</sup>3.99<span>/mo</span></p>
+      <ul class="mono-features">
+        <li><span class="tick" style="color:var(--amber);">✓</span> Unlimited swipes</li>
+        <li><span class="tick" style="color:var(--amber);">✓</span> Offline packs (Inflight Mode)</li>
+        <li><span class="tick" style="color:var(--amber);">✓</span> 30-second audio summaries</li>
+        <li><span class="tick" style="color:var(--amber);">✓</span> Zero ads</li>
+        <li><span class="tick" style="color:var(--amber);">✓</span> 40-language toggle</li>
+        <li><span class="tick" style="color:var(--amber);">✓</span> Apple Watch glance</li>
+      </ul>
+    </div>
+    <div class="mono-card b2b fade-in" style="transition-delay:0.3s;">
+      <p class="mono-tier">B2B API</p>
+      <p class="mono-price" style="font-size:42px;">Custom</p>
+      <ul class="mono-features">
+        <li><span class="tick" style="color:var(--sky);">✓</span> 2-line summary feed</li>
+        <li><span class="tick" style="color:var(--sky);">✓</span> Newsletters & fintech tickers</li>
+        <li><span class="tick" style="color:var(--sky);">✓</span> Credibility scoring API</li>
+        <li><span class="tick" style="color:var(--sky);">✓</span> Real-time webhooks</li>
+        <li><span class="tick" style="color:var(--sky);">✓</span> SLA & dedicated support</li>
+        <li><span class="tick" style="color:var(--sky);">✓</span> White-label option</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2 class="section-title">Roadmap</h2>
+  </div>
+  <div class="roadmap-track fade-in">
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-icon">📱</div>
+      <p class="roadmap-q">Beta</p>
+      <p class="roadmap-desc">500 geo-journalists & travel influencers via TestFlight. Passport share card.</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-icon">⌚</div>
+      <p class="roadmap-q">Q2</p>
+      <p class="roadmap-desc">Apple Watch glance — spin Digital Crown to scroll the globe.</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-icon">🎬</div>
+      <p class="roadmap-q">Q3</p>
+      <p class="roadmap-desc">AI-generated 15-second vertical video summaries for story cards.</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-dot"></div>
+      <div class="roadmap-icon">✈️</div>
+      <p class="roadmap-q">Q4</p>
+      <p class="roadmap-desc">Inflight Mode — preload 200 top stories before take-off, full offline.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PITCH -->
+<div class="pitch-section">
+  <p class="pitch-text">"GlobeSnap turns the planet into an infinite swipe deck of perfectly-shrunk world news — any country, two lines, zero clutter."</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p class="footer-brand">Globe<span>Snap</span></p>
+  <p class="footer-note">Product Blueprint · Confidential · 2025</p>
+</footer>
+
+<script>
+// ── GLOBE CANVAS ──
+const canvas = document.getElementById('globe');
+if (canvas) {
+  const ctx = canvas.getContext('2d');
+  const W = 420, H = 420, cx = W/2, cy = H/2, R = 170;
+  let angle = 0;
+
+  const hotspots = [
+    { lat: 50, lon: 30, color: '#e74c3c', size: 5, label: 'UA' },
+    { lat: 35, lon: 35, color: '#e74c3c', size: 4, label: 'SY' },
+    { lat: 23, lon: 121, color: '#e8760a', size: 4, label: 'TW' },
+    { lat: 37, lon: 127, color: '#e8760a', size: 3, label: 'KR' },
+    { lat: -23, lon: -46, color: '#1a7a4a', size: 3, label: 'BR' },
+    { lat: 28, lon: 77, color: '#1a7a4a', size: 4, label: 'IN' },
+    { lat: 51, lon: -0.1, color: '#2a6496', size: 3, label: 'UK' },
+    { lat: 40, lon: -74, color: '#2a6496', size: 5, label: 'US' },
+    { lat: 48, lon: 2, color: '#2a6496', size: 3, label: 'FR' },
+    { lat: 31, lon: 35, color: '#e74c3c', size: 4, label: 'IL' },
+    { lat: -33, lon: 151, color: '#1a7a4a', size: 2, label: 'AU' },
+    { lat: 55, lon: 37, color: '#9b59b6', size: 3, label: 'RU' },
+  ];
+
+  function project(lat, lon, rotAngle) {
+    const phi = (90 - lat) * Math.PI / 180;
+    const theta = (lon + rotAngle) * Math.PI / 180;
+    const x = R * Math.sin(phi) * Math.cos(theta);
+    const y = R * Math.cos(phi);
+    const z = R * Math.sin(phi) * Math.sin(theta);
+    return { x: cx + x, y: cy - y, z, visible: z > -20 };
+  }
+
+  function drawLongitude(lon, rotAngle, alpha) {
+    ctx.beginPath();
+    for (let lat = -80; lat <= 80; lat += 5) {
+      const p = project(lat, lon, rotAngle);
+      if (!p.visible) continue;
+      if (lat === -80) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = `rgba(100,160,200,${alpha})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  function drawLatitude(lat, rotAngle, alpha) {
+    ctx.beginPath();
+    let first = true;
+    for (let lon = 0; lon <= 360; lon += 5) {
+      const p = project(lat, lon, rotAngle);
+      if (!p.visible) continue;
+      if (first) { ctx.moveTo(p.x, p.y); first = false; }
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = `rgba(100,160,200,${alpha})`;
+    ctx.lineWidth = 0.4;
+    ctx.stroke();
+  }
+
+  function drawGlobe(a) {
+    ctx.clearRect(0, 0, W, H);
+
+    // Base sphere
+    const grad = ctx.createRadialGradient(cx - 50, cy - 50, 20, cx, cy, R);
+    grad.addColorStop(0, '#1a4a7a');
+    grad.addColorStop(0.5, '#0d2a4a');
+    grad.addColorStop(1, '#060e1a');
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Atmosphere glow
+    const atmo = ctx.createRadialGradient(cx, cy, R - 10, cx, cy, R + 24);
+    atmo.addColorStop(0, 'rgba(42,122,200,0.15)');
+    atmo.addColorStop(1, 'rgba(42,122,200,0)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + 24, 0, Math.PI * 2);
+    ctx.fillStyle = atmo;
+    ctx.fill();
+
+    // Clip to sphere
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Grid lines
+    for (let lon = 0; lon < 360; lon += 30) drawLongitude(lon, a, 0.12);
+    for (let lat = -60; lat <= 60; lat += 30) drawLatitude(lat, a, 0.12);
+    drawLatitude(0, a, 0.2); // equator brighter
+
+    // Landmasses (simplified arcs)
+    const lands = [
+      { lat: 45, lon: 10, r: 22, color: 'rgba(35,100,55,0.65)' },
+      { lat: 52, lon: 0, r: 14, color: 'rgba(35,100,55,0.55)' },
+      { lat: 55, lon: 37, r: 28, color: 'rgba(35,100,55,0.5)' },
+      { lat: 35, lon: 105, r: 26, color: 'rgba(35,100,55,0.55)' },
+      { lat: 28, lon: 80, r: 16, color: 'rgba(35,100,55,0.5)' },
+      { lat: 0, lon: 20, r: 22, color: 'rgba(35,100,55,0.6)' },
+      { lat: 10, lon: -10, r: 14, color: 'rgba(35,100,55,0.5)' },
+      { lat: 40, lon: -100, r: 26, color: 'rgba(35,100,55,0.55)' },
+      { lat: 0, lon: -60, r: 18, color: 'rgba(35,100,55,0.5)' },
+      { lat: -25, lon: 133, r: 20, color: 'rgba(35,100,55,0.5)' },
+      { lat: -30, lon: 25, r: 16, color: 'rgba(35,100,55,0.45)' },
+    ];
+
+    lands.forEach(l => {
+      const p = project(l.lat, l.lon, a);
+      if (p.z < 30) return;
+      const scale = (p.z / R) * 0.7 + 0.3;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, l.r * scale, l.r * 0.7 * scale, 0, 0, Math.PI * 2);
+      ctx.fillStyle = l.color;
+      ctx.fill();
+    });
+
+    ctx.restore();
+
+    // Highlight / specular
+    const spec = ctx.createRadialGradient(cx - 55, cy - 55, 5, cx - 30, cy - 30, R * 0.7);
+    spec.addColorStop(0, 'rgba(255,255,255,0.12)');
+    spec.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = spec;
+    ctx.fill();
+
+    // Hotspot pins
+    hotspots.forEach(h => {
+      const p = project(h.lat, h.lon, a);
+      if (!p.visible || p.z < 10) return;
+      const scale = (p.z / R) * 0.6 + 0.4;
+
+      // Pulse ring
+      const t = (Date.now() % 2000) / 2000;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, h.size * scale * (1 + t * 1.5), 0, Math.PI * 2);
+      ctx.strokeStyle = h.color.replace(')', `,${0.4 * (1 - t)})`).replace('rgb', 'rgba').replace('rgba(rgba', 'rgba');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Pin dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, h.size * scale, 0, Math.PI * 2);
+      ctx.fillStyle = h.color;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    });
+
+    angle += 0.003;
+    requestAnimationFrame(() => drawGlobe(angle));
+  }
+
+  drawGlobe(angle);
+}
+
+// ── INTERSECTION OBSERVER FOR FADE-INS ──
+const faders = document.querySelectorAll('.fade-in');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+faders.forEach(f => observer.observe(f));
+</script>
+</body>
+</html>
